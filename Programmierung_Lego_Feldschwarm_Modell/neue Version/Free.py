@@ -64,8 +64,6 @@ def getSpeed(s: socket):
             valuespeed = -1
             
         return valuespeed
-    else:
-        return -2
 
 
 def Freerun():
@@ -275,13 +273,16 @@ def updatecanvas():
             Abstandtxt = str(Abstand)
         else:
             Abstandtxt = "fehler: zu große Entfernung"
+
         Geschw = getSpeed(s)
-        Geschw = Geschw * -1
-        if (Geschw > -1):
-            Geschwtxt = str(Geschw)
-        else:
-            Geschwtxt = "fehler beim lesen der geschwindgkeit"
-        speed.config(text= Geschwtxt)
+        if (Geschw or Geschw == 0):
+            
+            Geschw = Geschw * -1
+            if (Geschw > -1):
+                Geschwtxt = str(Geschw)
+            else:
+                Geschwtxt = "fehler beim lesen der geschwindgkeit"
+            speed.config(text= Geschwtxt)
         distance.config(text= Abstandtxt)
         time.sleep(0.2)
         
