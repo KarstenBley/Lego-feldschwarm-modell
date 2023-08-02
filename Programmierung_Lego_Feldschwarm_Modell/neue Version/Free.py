@@ -253,7 +253,6 @@ def updatecanvas():
     while True:
         
         Abstand = getDistance(s)
-        print(Abstand) 
         if (Abstand > -1):
             Abstandtxt = str(Abstand)
         else:
@@ -263,7 +262,7 @@ def updatecanvas():
         distance.place(x=1300, y=200)
             
             #
-        print("test")
+
         """
         global PositionA
         global speedB
