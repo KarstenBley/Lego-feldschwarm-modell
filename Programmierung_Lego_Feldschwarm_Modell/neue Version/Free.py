@@ -40,15 +40,28 @@ def sendToSpike(s: socket, cmd: str):
     return bytes(data[:len(data) - 3])
 
 def getDistance(s: socket):
-    global value2
+    global valuedistance2
     data = sendToSpike(s, "print(DistanceSensorD.get_distance_cm())")
     if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
-        value2 = data[2:len(data)-2]
-        if value2 != b'None':
-            value = int(value2)
+        valuedistance2 = data[2:len(data)-2]
+        if valuedistance2 != b'None':
+            valuedistance = int(valuedistance2)
         else:
-            value = -1
-        return value
+            valuedistance = -1
+        return valuedistance
+    else:
+        return -2
+    
+def getSpeed(s: socket):
+    global valuespeed2
+    data = sendToSpike(s, "print(DistanceSensorD.get_distance_cm())")
+    if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
+        valuespeed2 = data[2:len(data)-2]
+        if valuespeed2 != b'None':
+            valuespeed = int(valuespeed2)
+        else:
+            valuespeed = -1
+        return valuespeed
     else:
         return -2
 
