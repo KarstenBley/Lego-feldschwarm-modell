@@ -190,8 +190,8 @@ def Freerun():
         chassis.place(x=900, y=350)
         chassis=Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
         chassis.place(x=1300, y=350)
-        
-        quit = Button(Freew, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Freew.destroy()])
+
+        quit = Button(Freew, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Freew.destroy(), s.close()])
         quit.place(x=1269,y=700)
         
         keyboard.on_press_key("w", lambda _:sendToSpike(s,"AccelerationB.start(-100)"))
