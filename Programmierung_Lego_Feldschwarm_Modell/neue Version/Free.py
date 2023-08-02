@@ -41,10 +41,11 @@ def sendToSpike(s: socket, cmd: str):
 
 def getDistance(s: socket):
     global valuedistance2
-    data = sendToSpike(s, "print(DistanceSensorD.get_distance_cm())")
-    if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
-        valuedistance2 = data[2:len(data)-2]
-        if valuedistance2 != b'None':
+    dataDistance = sendToSpike(s, "print(DistanceSensorD.get_distance_cm())")
+    if (dataDistance.startswith(bytes('OK', 'UTF-8')) and dataDistance.endswith(bytes('\r\n', 'UTF-8'))):
+        valuedistance2 = dataDistance[2:len(dataDistance)-2]
+        print(valuedistance2)
+        if valuedistance2 != b'None' and not valuedistance2.startswith(bytes('OK', 'UTF-8')):
             valuedistance = int(valuedistance2)
         else:
             valuedistance = -1
@@ -54,13 +55,14 @@ def getDistance(s: socket):
     
 def getSpeed(s: socket):
     global valuespeed2
-    data = sendToSpike(s, "print(AccelerationB.get_speed())")
-    if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
-        valuespeed2 = data[2:len(data)-2]
+    dataSpeed = sendToSpike(s, "print(AccelerationB.get_speed())")
+    if (dataSpeed.startswith(bytes('OK', 'UTF-8')) and dataSpeed.endswith(bytes('\r\n', 'UTF-8'))):
+        valuespeed2 = dataSpeed[2:len(dataSpeed)-2]
         if valuespeed2 != b'None':
             valuespeed = int(valuespeed2)
         else:
             valuespeed = -1
+            
         return valuespeed
     else:
         return -2
@@ -68,7 +70,8 @@ def getSpeed(s: socket):
 
 def Freerun():
     global distance
-    global speed2
+    global speed
+    global Geschw
     global Abstand
     global Abstandtxt
     global canvas
@@ -82,7 +85,7 @@ def Freerun():
     while True:
         
         #connencting with lego hub
-        adapter_addr = "ac:1f:0f:1d:61:c1"
+        adapter_addr = "64:8C:BB:08:8F:24"
         port = 1  # Normal port for rfcomm?
         buf_size = 1024
 
@@ -182,8 +185,8 @@ def Freerun():
         #
         speed=Label(Freew, text="Geschwindigkeit:", fg='blue', font=("Helvetica", 30))
         speed.place(x=900, y=150)
-        speed2=Label(Freew, text= "Test", fg='blue', font=("Helvetica", 30))
-        speed2.place(x=1300, y=150)
+        speed=Label(Freew, text= "Test", fg='blue', font=("Helvetica", 30))
+        speed.place(x=1300, y=150)
         #
         distance=Label(Freew, text="Abstand:", fg='blue', font=("Helvetica", 30))
         distance.place(x=900, y=200)
@@ -246,6 +249,7 @@ def Freerun():
         x = threading.Thread(target=updatecanvas)
         x.start()
         Freew.mainloop()
+        
         sendToSpike(s,"hub.display.show()")
         
         print(data)
@@ -263,37 +267,21 @@ def Freerun():
         exit()
 
 def updatecanvas():
-    Accelerated = True
     while True:
+        Accelerated = True
         
         Abstand = getDistance(s)
         if (Abstand > -1):
             Abstandtxt = str(Abstand)
         else:
             Abstandtxt = "fehler: zu große Entfernung"
-
         Geschw = getSpeed(s)
         Geschw = Geschw * -1
-        Geschwtxt = str(Geschw)
-
-
-        speed2.config(text= Geschwtxt)
-        distance.config(text= Abstandtxt)    #
-
-        """
-        global PositionA
-        global speedB
-        global PositionC
-        global angleE
-        global distanceD
-        """
+        if (Geschw > -1):
+            Geschwtxt = str(Geschw)
+        else:
+            Geschwtxt = "fehler beim lesen der geschwindgkeit"
+        speed.config(text= Geschwtxt)
+        distance.config(text= Abstandtxt)
+        time.sleep(0.2)
         
-        """
-        if (Abstand > -1):
-            if (Abstand > 15 and not Accelerated):
-                sendToSpike(s,"AccelerationB.start(-100)")
-                Accelerated = True
-            if (Abstand < 15 and Accelerated):
-                sendToSpike(s,"AccelerationB.stop()")
-                Accelerated = False
-                """
