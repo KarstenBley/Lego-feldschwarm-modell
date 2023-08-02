@@ -191,6 +191,9 @@ def Freerun():
         chassis=Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
         chassis.place(x=1300, y=350)
         
+        quit = Button(Freew, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Freew.destroy()])
+        quit.place(x=1269,y=700)
+        
         keyboard.on_press_key("w", lambda _:sendToSpike(s,"AccelerationB.start(-100)"))
         keyboard.on_press_key("w", lambda _:canvas.create_polygon(425, 100, 325, 250, 525, 250, outline = 'blue', fill = 'blue'))
         keyboard.on_press_key("w", lambda _:canvas.create_rectangle( 375, 250, 475, 400, outline = 'blue', fill = 'blue'))
@@ -268,9 +271,8 @@ def updatecanvas():
         global angleE
         global distanceD
         """
-        quit = Button(Freew, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Freew.destroy()])
-        quit.place(x=1269,y=700)
-
+        
+        """
         if (Abstand > -1):
             if (Abstand > 15 and not Accelerated):
                 sendToSpike(s,"AccelerationB.start(-100)")
@@ -278,3 +280,4 @@ def updatecanvas():
             if (Abstand < 15 and Accelerated):
                 sendToSpike(s,"AccelerationB.stop()")
                 Accelerated = False
+                """
