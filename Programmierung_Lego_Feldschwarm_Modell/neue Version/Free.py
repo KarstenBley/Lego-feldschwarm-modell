@@ -54,7 +54,7 @@ def getDistance(s: socket):
     
 def getSpeed(s: socket):
     global valuespeed2
-    data = sendToSpike(s, "print(DistanceSensorD.get_distance_cm())")
+    data = sendToSpike(s, "print(AccelerationB.get_speed())")
     if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
         valuespeed2 = data[2:len(data)-2]
         if valuespeed2 != b'None':
@@ -68,6 +68,7 @@ def getSpeed(s: socket):
 
 def Freerun():
     global distance
+    global speed2
     global Abstand
     global Abstandtxt
     global canvas
@@ -270,11 +271,14 @@ def updatecanvas():
             Abstandtxt = str(Abstand)
         else:
             Abstandtxt = "fehler: zu große Entfernung"
-            
-        distance.config(text=Abstandtxt)
-        distance.place(x=1300, y=200)
-            
-            #
+
+        Geschw = getSpeed(s)
+        Geschw = Geschw * -1
+        Geschwtxt = str(Geschw)
+
+
+        speed2.config(text= Geschwtxt)
+        distance.config(text= Abstandtxt)    #
 
         """
         global PositionA
