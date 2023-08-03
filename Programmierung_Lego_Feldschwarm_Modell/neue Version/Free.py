@@ -44,7 +44,6 @@ def getDistance(s: socket):
     dataDistance = sendToSpike(s, "print(DistanceSensorD.get_distance_cm())")
     if (dataDistance.startswith(bytes('OK', 'UTF-8')) and dataDistance.endswith(bytes('\r\n', 'UTF-8'))):
         valuedistance2 = dataDistance[2:len(dataDistance)-2]
-        print(valuedistance2)
         if valuedistance2 != b'None' and not valuedistance2.startswith(bytes('OK', 'UTF-8')):
             valuedistance = int(valuedistance2)
         else:
@@ -58,17 +57,43 @@ def getSpeed(s: socket):
     dataSpeed = sendToSpike(s, "print(AccelerationB.get_speed())")
     if (dataSpeed.startswith(bytes('OK', 'UTF-8')) and dataSpeed.endswith(bytes('\r\n', 'UTF-8'))):
         valuespeed2 = dataSpeed[2:len(dataSpeed)-2]
-        if valuespeed2 != b'None':
+        if valuespeed2 != b'None' and not valuespeed2.startswith(bytes('OK', 'UTF-8')):
             valuespeed = int(valuespeed2)
         else:
-            valuespeed = -1
+            valuespeed = "Error"
             
         return valuespeed
+
+def getAngle(s: socket):
+    global valueAngle2
+    dataAngle = sendToSpike(s, "print(SteeringE.get_degrees_counted())")
+    if (dataAngle.startswith(bytes('OK', 'UTF-8')) and dataAngle.endswith(bytes('\r\n', 'UTF-8'))):
+        valueAngle2 = dataAngle[2:len(dataAngle)-2]
+        if valueAngle2 != b'None' and not valueAngle2.startswith(bytes('OK', 'UTF-8')):
+            valueAngle = int(valueAngle2)
+        else:
+            valueAngle = "Error"
+            
+        return valueAngle
+    
+def isStalled(s: socket):
+    global valueStalled2
+    dataStalled = sendToSpike(s, "print(SteeringE.was_stalled())")
+    print(dataStalled)
+    if (dataStalled.startswith(bytes('OK', 'UTF-8')) and dataStalled.endswith(bytes('\r\n', 'UTF-8'))):
+        valueStalled2 = dataStalled[2:len(dataStalled)-2]
+        print(valueStalled2)
+        if valueStalled2.startswith(bytes('True', 'UTF-8')):
+            print("Trued")
+            return True
+    print("Falsed")
+    return False
 
 
 def Freerun():
     global distance
     global speed
+    global steering
     global Geschw
     global Abstand
     global Abstandtxt
@@ -83,7 +108,7 @@ def Freerun():
     while True:
         
         #connencting with lego hub
-        adapter_addr = "64:8C:BB:08:8F:24"
+        adapter_addr = "ac:1f:0f:1d:61:c1"
         port = 1  # Normal port for rfcomm?
         buf_size = 1024
 
@@ -135,10 +160,6 @@ def Freerun():
         
         print(data)
 
-        sendToSpike(s,"SteeringE.set_degrees_counted(0)")
-        
-        print(data)
-
         sendToSpike(s,"Chassis.set_degrees_counted(0)")
         
         print(data)
@@ -163,22 +184,28 @@ def Freerun():
         
         print(data)
 
+
+        
+
         x = 0
 
         canvas = Canvas(Freew, width = 1500, height = 900)
-        #forward
+        """
+        forward
         canvas.create_polygon(100,500,200,600,200,400, outline = 'black', fill = 'black')
         canvas.create_rectangle( 200, 450, 350, 550, outline = 'black', fill = 'black')
-        #left
+        left
         canvas.create_polygon( 425, 100, 325, 250, 525, 250, outline = 'black', fill = 'black')
         canvas.create_rectangle( 375, 250, 475, 400, outline = 'black', fill = 'black')
-        #right
+        right
         canvas.create_polygon( 750, 500, 650, 400, 650, 600, outline = 'black', fill = 'black')
         canvas.create_rectangle( 500, 450, 650, 550, outline = 'black', fill = 'black')
-        #backwards
+        backwards
         canvas.create_polygon( 425, 850, 325, 750, 525, 750, outline = 'black', fill = 'black')
         canvas.create_rectangle( 375, 600, 475, 750, outline = 'black', fill = 'black')
+        """
         canvas.grid()
+        
     
         #
         speed=Label(Freew, text="Geschwindigkeit:", fg='blue', font=("Helvetica", 30))
@@ -208,34 +235,37 @@ def Freerun():
 
         quit = Button(Freew, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Freew.destroy(), s.close()])
         quit.place(x=1269,y=700)
+
         
+        #angleReset = Button(Freew, text="reset angle", fg='blue', font=("Helvetica", 40), command=sendToSpike(s,"SteeringE.set_degrees_counted(0)"))
+        #angleReset.place(x=900,y=700)
         keyboard.on_press_key("w", lambda _:sendToSpike(s,"AccelerationB.start(-100)"))
-        keyboard.on_press_key("w", lambda _:canvas.create_polygon(425, 100, 325, 250, 525, 250, outline = 'blue', fill = 'blue'))
-        keyboard.on_press_key("w", lambda _:canvas.create_rectangle( 375, 250, 475, 400, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("w", lambda _:canvas.create_polygon(425, 100, 325, 250, 525, 250, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("w", lambda _:canvas.create_rectangle( 375, 250, 475, 400, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("w",lambda _: sendToSpike(s,"AccelerationB.stop()"))
-        keyboard.on_release_key("w", lambda _:canvas.create_polygon(425, 100, 325, 250, 525, 250, outline = 'black', fill = 'black'))
-        keyboard.on_release_key("w", lambda _:canvas.create_rectangle( 375, 250, 475, 400, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("w", lambda _:canvas.create_polygon(425, 100, 325, 250, 525, 250, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("w", lambda _:canvas.create_rectangle( 375, 250, 475, 400, outline = 'black', fill = 'black'))
         #backwards
         keyboard.on_press_key("s", lambda _:sendToSpike(s,"AccelerationB.start(75)"))
-        keyboard.on_press_key("s", lambda _:canvas.create_polygon(425, 850, 325, 750, 525, 750, outline = 'blue', fill = 'blue'))
-        keyboard.on_press_key("s", lambda _:canvas.create_rectangle( 375, 600, 475, 750, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("s", lambda _:canvas.create_polygon(425, 850, 325, 750, 525, 750, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("s", lambda _:canvas.create_rectangle( 375, 600, 475, 750, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("s",lambda _: sendToSpike(s,"AccelerationB.stop()"))
-        keyboard.on_release_key("s", lambda _:canvas.create_polygon(425, 850, 325, 750, 525, 750, outline = 'black', fill = 'black'))
-        keyboard.on_release_key("s", lambda _:canvas.create_rectangle( 375, 600, 475, 750, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("s", lambda _:canvas.create_polygon(425, 850, 325, 750, 525, 750, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("s", lambda _:canvas.create_rectangle( 375, 600, 475, 750, outline = 'black', fill = 'black'))
         #left
         keyboard.on_press_key("a", lambda _:sendToSpike(s,"SteeringE.start(15)"))
-        keyboard.on_press_key("a", lambda _:canvas.create_polygon(100,500,200,600,200,400, outline = 'blue', fill = 'blue'))
-        keyboard.on_press_key("a", lambda _:canvas.create_rectangle( 200, 450, 350, 550, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("a", lambda _:canvas.create_polygon(100,500,200,600,200,400, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("a", lambda _:canvas.create_rectangle( 200, 450, 350, 550, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("a",lambda _: sendToSpike(s,"SteeringE.stop()"))
-        keyboard.on_release_key("a", lambda _:canvas.create_polygon(100,500,200,600,200,400, outline = 'black', fill = 'black'))
-        keyboard.on_release_key("a", lambda _:canvas.create_rectangle( 200, 450, 350, 550, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("a", lambda _:canvas.create_polygon(100,500,200,600,200,400, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("a", lambda _:canvas.create_rectangle( 200, 450, 350, 550, outline = 'black', fill = 'black'))
         #right
         keyboard.on_press_key("d", lambda _:sendToSpike(s,"SteeringE.start(-15)"))
-        keyboard.on_press_key("d", lambda _:canvas.create_polygon(750, 500, 650, 400, 650, 600, outline = 'blue', fill = 'blue'))
-        keyboard.on_press_key("d", lambda _:canvas.create_rectangle( 500, 450, 650, 550, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("d", lambda _:canvas.create_polygon(750, 500, 650, 400, 650, 600, outline = 'blue', fill = 'blue'))
+        #keyboard.on_press_key("d", lambda _:canvas.create_rectangle( 500, 450, 650, 550, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("d",lambda _: sendToSpike(s,"SteeringE.stop()"))
-        keyboard.on_release_key("d", lambda _:canvas.create_polygon(750, 500, 650, 400, 650, 600, outline = 'black', fill = 'black'))
-        keyboard.on_release_key("d", lambda _:canvas.create_rectangle( 500, 450, 650, 550, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("d", lambda _:canvas.create_polygon(750, 500, 650, 400, 650, 600, outline = 'black', fill = 'black'))
+        #keyboard.on_release_key("d", lambda _:canvas.create_rectangle( 500, 450, 650, 550, outline = 'black', fill = 'black'))
         #chassis up and down
         keyboard.on_press_key("y", lambda _:sendToSpike(s,"Chassis.run_for_rotations(5)"))
         keyboard.on_press_key("x",lambda _: sendToSpike(s,"Chassis.run_for_rotations(-5)"))
@@ -265,24 +295,68 @@ def Freerun():
         exit()
 
 def updatecanvas():
+    positionX = 425
+    positionY = 500
+    nextPosX = 0
+    nextPosY = 0
+    rotation = 0
+    Winkel2 = 0
+    Geschw2 = 0
+    while not isStalled(s):
+        distance.config(text = "Winkel wird eingestellt")
+        steering.config(text = "Winkel wird eingestellt")
+        speed.config(text= "Winkel wird eingestellt")
+
+        sendToSpike(s, "SteeringE.run_for_rotations(1)")
+    sendToSpike(s, "SteeringE.run_for_degrees(-53)")
+    sendToSpike(s, "SteeringE.set_degrees_counted(0)")
+    speed.config(text= "0")
     while True:
-        Accelerated = True
-        
         Abstand = getDistance(s)
+        Geschw = getSpeed(s)
+        Winkel = getAngle(s)
+        
         if (Abstand > -1):
             Abstandtxt = str(Abstand)
         else:
             Abstandtxt = "fehler: zu große Entfernung"
 
-        Geschw = getSpeed(s)
+        if (Winkel or Winkel == 0):
+
+            if (Winkel != "Error"):
+                Winkeltxt = str(Winkel)
+            else:
+                Winkeltxt = "fehler beim lesen des Winkels"
+
+
         if (Geschw or Geschw == 0):
             
             Geschw = Geschw * -1
-            if (Geschw > -1):
+            if (Geschw != "Error"):
                 Geschwtxt = str(Geschw)
             else:
                 Geschwtxt = "fehler beim lesen der geschwindgkeit"
             speed.config(text= Geschwtxt)
-        distance.config(text= Abstandtxt)
+
+        if (Geschw != None and Geschw != "Error"):
+            Geschw2 = Geschw
+        else:
+            Geschw2 = 0
+
+        if (Winkel != None and Winkel != "Error"):
+            Winkel2 = Winkel
+        else:
+            Winkel2 = 0
+        rotation += Winkel2 * Geschw2 /200
+        #print(rotation)
+        radians = (math.pi / 180) * (90 - rotation); 
+        nextPosX = (int)(positionX + Geschw2/5 * math.cos(radians)); 
+        nextPosY = (int)(positionY + Geschw2/5 * math.sin(radians));
+        canvas.create_line(positionX, positionY, nextPosX, nextPosY, fill = "red")
+        positionX = nextPosX
+        positionY = nextPosY
+
+        distance.config(text = Abstandtxt)
+        steering.config(text = Winkeltxt)
         time.sleep(0.2)
         
