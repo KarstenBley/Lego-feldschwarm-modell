@@ -82,11 +82,8 @@ def isStalled(s: socket):
     print(dataStalled)
     if (dataStalled.startswith(bytes('OK', 'UTF-8')) and dataStalled.endswith(bytes('\r\n', 'UTF-8'))):
         valueStalled2 = dataStalled[2:len(dataStalled)-2]
-        print(valueStalled2)
         if valueStalled2.startswith(bytes('True', 'UTF-8')):
-            print("Trued")
             return True
-    print("Falsed")
     return False
 
 
@@ -206,7 +203,7 @@ def Freerun():
         """
         canvas.grid()
         
-    
+        canvas.create_rectangle( 50, 50, 800, 800, outline = 'gray', fill = 'gray')
         #
         speed=Label(Freew, text="Geschwindigkeit:", fg='blue', font=("Helvetica", 30))
         speed.place(x=900, y=150)
@@ -295,10 +292,19 @@ def Freerun():
         exit()
 
 def updatecanvas():
+    IsMoving = False
+    GeschwBuffer=0
+    GeschwBufferMax = 50
+    WinkelBuffer=0
+    WinkelBufferMax = 10
     positionX = 425
     positionY = 500
     nextPosX = 0
     nextPosY = 0
+    obstacleX = 0
+    obstacleY = 0
+    obstacleX = 0
+    obstacleY = 0
     rotation = 0
     Winkel2 = 0
     Geschw2 = 0
@@ -306,9 +312,8 @@ def updatecanvas():
         distance.config(text = "Winkel wird eingestellt")
         steering.config(text = "Winkel wird eingestellt")
         speed.config(text= "Winkel wird eingestellt")
-
-        sendToSpike(s, "SteeringE.run_for_rotations(1)")
-    sendToSpike(s, "SteeringE.run_for_degrees(-53)")
+        sendToSpike(s, "SteeringE.run_for_degrees(100)")
+    sendToSpike(s, "SteeringE.run_for_degrees(-45)")
     sendToSpike(s, "SteeringE.set_degrees_counted(0)")
     speed.config(text= "0")
     while True:
@@ -317,13 +322,15 @@ def updatecanvas():
         Winkel = getAngle(s)
         
         if (Abstand > -1):
+            Abstand2 = Abstand
             Abstandtxt = str(Abstand)
         else:
+            Abstand2 = 0
             Abstandtxt = "fehler: zu große Entfernung"
-
         if (Winkel or Winkel == 0):
 
             if (Winkel != "Error"):
+                Winkel *=-1
                 Winkeltxt = str(Winkel)
             else:
                 Winkeltxt = "fehler beim lesen des Winkels"
@@ -332,31 +339,59 @@ def updatecanvas():
         if (Geschw or Geschw == 0):
             
             Geschw = Geschw * -1
-            if (Geschw != "Error"):
-                Geschwtxt = str(Geschw)
-            else:
+            if Geschw == "Error":
                 Geschwtxt = "fehler beim lesen der geschwindgkeit"
-            speed.config(text= Geschwtxt)
+                speed.config(text= Geschwtxt)
 
-        if (Geschw != None and Geschw != "Error"):
-            Geschw2 = Geschw
-        else:
-            Geschw2 = 0
+        if Geschw != None:
+            if Geschw != "Error":
+                if GeschwBuffer > GeschwBufferMax and int(Geschw) >= 0:
+                    Geschwtxt = str(Geschw)
+                    Geschw2 = Geschw
+                    speed.config(text= Geschwtxt)
+                elif GeschwBuffer < -GeschwBufferMax and int(Geschw) <= 0:
+                    Geschwtxt = str(Geschw)
+                    Geschw2 = Geschw
+                    speed.config(text= Geschwtxt)
+                else:
+                    GeschwBuffer += Geschw
+                    
+        if Winkel != None:
+             if Winkel != "Error":
+                if WinkelBuffer > WinkelBufferMax:
+                    if keyboard.is_pressed("a"):
+                        Winkeltxt = str(Winkel)
+                        Winkel2 = Winkel
+                elif WinkelBuffer < -WinkelBufferMax:
+                    if keyboard.is_pressed("d"):
+                        Winkeltxt = str(Winkel)
+                        Winkel2 = Winkel
+                elif keyboard.is_pressed("a"):
+                    WinkelBuffer += 2
+                elif keyboard.is_pressed("d"):
+                    WinkelBuffer -= 2
 
-        if (Winkel != None and Winkel != "Error"):
-            Winkel2 = Winkel
-        else:
-            Winkel2 = 0
-        rotation += Winkel2 * Geschw2 /200
-        #print(rotation)
-        radians = (math.pi / 180) * (90 - rotation); 
-        nextPosX = (int)(positionX + Geschw2/5 * math.cos(radians)); 
-        nextPosY = (int)(positionY + Geschw2/5 * math.sin(radians));
+        rotation += Winkel2 * Geschw2 / 800
+        print(WinkelBuffer)
+        nextPosX = (positionX + Geschw2/5 * math.cos(math.radians(rotation))); 
+        nextPosY = (positionY + Geschw2/5 * math.sin(math.radians(rotation)));
+        if Abstand2 != 0:
+            obstacleX = (positionX + (math.cos(math.radians(rotation)) * Abstand2 * 3)); 
+            obstacleY = (positionY + (math.sin(math.radians(rotation)) * Abstand2 * 3));
+            canvas.create_rectangle( obstacleX, obstacleY, obstacleX-10, obstacleY-10, outline = 'black', fill = 'black')
+
         canvas.create_line(positionX, positionY, nextPosX, nextPosY, fill = "red")
+        #if (Abstand > 15 or Abstand < 0) and not IsMoving:
+        #    sendToSpike(s,"AccelerationB.start(-100)")
+        #    IsMoving = True
+        #if (Abstand < 15 and Abstand > 0) and IsMoving:
+        #    sendToSpike(s,"AccelerationB.stop()")
+        #    IsMoving = False
+
         positionX = nextPosX
         positionY = nextPosY
-
+        
         distance.config(text = Abstandtxt)
         steering.config(text = Winkeltxt)
-        time.sleep(0.2)
+        time.sleep(0.05)
         
