@@ -308,6 +308,16 @@ class Window(tk.Tk):
             self.speed2.configure(text= str(self.spike.Test))
             self.steering2.configure(text= str(self.spike.Steeringangle))
 
+            if self.spike.Chassisheight == -1:
+                self.chassis2.configure(text= "lowered")
+            else:
+                self.chassis2.configure(text= "up")
+
+            if self.spike.Attmheight == -1:
+                self.attachment2.configure(text= "lowered")
+            else:
+                self.attachment2.configure(text= "up")
+
             # - update canvas
             self.canvas.delete("all")
             #left
