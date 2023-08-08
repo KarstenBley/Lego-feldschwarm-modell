@@ -16,6 +16,7 @@ def stop():
 
 def sendToSpike(s: socket, cmd: str):
    eot = b'\x04' + b'\x04' + bytes('>', 'UTF-8')
+   neot = b'\r\n' + b'\x04' + bytes('>', 'UTF-8')
 
    # Send the command
    s.send(bytes(cmd, 'UTF-8') + b'\x04')
@@ -27,6 +28,9 @@ def sendToSpike(s: socket, cmd: str):
       data.extend(tmp)
       if (data.endswith(eot)):
          break
+      elif(data.endswith(neot)):
+         print("systemFehler, überprüfen sie die Rechtschreibung der Befehle")
+         exit()
 
    return bytes(data[:len(data) - 3])
 
@@ -43,13 +47,6 @@ def getDistance(s: socket):
    else:
       return -2
     
-
-def stop(s: socket):
-   distance = getDistance(s)
-   if (distance != -1):
-      print(distance)
-   while distance <= 5 and distance >= 0:
-      print("blockiert")
 
 def sendwithtest(s: socket, cmd):
    data = sendToSpike(s, cmd)
@@ -212,8 +209,11 @@ def runfieldmode(y,b,anz):
                sendwithtest(s, "SteeringE.run_for_degrees(-35)")
                print(data)
                #
-               sendwithtest(s, "AccelerationB.run_for_rotations(-19)")
-               print(data)
+               f = 0
+               while f < 19:
+                  sendwithtest(s, "AccelerationB.run_for_rotations(-1)")
+                  print(data)
+                  f = f+1
                #
                #turtle.circle(-50,90)
                #turtle.forward(30)
@@ -233,16 +233,22 @@ def runfieldmode(y,b,anz):
                sendwithtest(s, "SteeringE.run_for_degrees(35)")
                print(data)
                #
-               sendwithtest(s, "AccelerationB.run_for_rotations(19)")
-               print(data)
+               f = 0
+               while f < 19:
+                  sendwithtest(s, "AccelerationB.run_for_rotations(1)")
+                  print(data)
+                  f = f+1
                #
                #turtle.circle(50,-90)
                #
                sendwithtest(s, "SteeringE.run_for_degrees(-35)")
                print(data)
                #
-               sendwithtest(s, "AccelerationB.run_for_rotations(-15)")
-               print(data)
+               f = 0
+               while f < 15:
+                  sendwithtest(s, "AccelerationB.run_for_rotations(-1)")
+                  print(data)
+                  f = f+1
                #
                #turtle.forward(100)
                #
@@ -262,8 +268,11 @@ def runfieldmode(y,b,anz):
                sendwithtest(s, "SteeringE.run_for_degrees(35)")
                print(data)
                #
-               sendwithtest(s, "AccelerationB.run_for_rotations(-19)")
-               print(data)
+               f = 0
+               while f < 15:
+                  sendwithtest(s, "AccelerationB.run_for_rotations(-1)")
+                  print(data)
+                  f = f+1
                #
                sendwithtest(s, "SteeringE.run_for_degrees(-35)")
                print(data)
@@ -278,14 +287,20 @@ def runfieldmode(y,b,anz):
                sendwithtest(s, "SteeringE.run_for_degrees(-35)")
                print(data)
                #
-               sendwithtest(s, "AccelerationB.run_for_rotations(19)")
-               print(data)
+               f = 0
+               while f < 19:
+                  sendwithtest(s, "AccelerationB.run_for_rotations(19)")
+                  print(data)
+                  f = f+1
                #
                sendwithtest(s, "SteeringE.run_for_degrees(35)")
                print(data)
                #
-               sendwithtest(s, "AccelerationB.run_for_rotations(-15)")
-               print(data)
+               f = 0
+               while f < 15:
+                  sendwithtest(s, "AccelerationB.run_for_rotations(-15)")
+                  print(data)
+                  f = f+1
                #
                sendwithtest(s, "Attachment.run_for_rotations(2)")
                print(data)

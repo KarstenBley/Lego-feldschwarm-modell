@@ -118,6 +118,7 @@ class Spike:
         self.isSending = True
 
         eot = b'\x04' + b'\x04' + bytes('>', 'UTF-8')
+        neot = b'\r\n' + b'\x04' + bytes('>', 'UTF-8')
 
         # sendToSpike the command
         self.s.send(bytes(cmd, 'UTF-8') + b'\x04')
@@ -132,6 +133,11 @@ class Spike:
                 data.extend(tmp)
                 if (data.endswith(eot)):
                     break
+                elif(data.endswith(neot)):
+                    print("Systemfehler, überprüfen sie die Rechtschreibung der Befehle")
+                    #self.s.close()
+                    #exit()
+                    quit()
             except:
                 print(data)
                 break
