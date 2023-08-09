@@ -118,6 +118,7 @@ class Spike:
         self.isSending = True
 
         eot = b'\x04' + b'\x04' + bytes('>', 'UTF-8')
+        neot = b'\r\n' + b'\x04' + bytes('>', 'UTF-8')
 
         # sendToSpike the command
         self.s.send(bytes(cmd, 'UTF-8') + b'\x04')
@@ -132,6 +133,11 @@ class Spike:
                 data.extend(tmp)
                 if (data.endswith(eot)):
                     break
+                elif(data.endswith(neot)):
+                    print("Systemfehler, überprüfen sie die Rechtschreibung der Befehle")
+                    #self.s.close()
+                    #exit()
+                    quit()
             except:
                 print(data)
                 break
@@ -307,6 +313,16 @@ class Window(tk.Tk):
 
             self.speed2.configure(text= str(self.spike.Test))
             self.steering2.configure(text= str(self.spike.Steeringangle))
+
+            if self.spike.Chassisheight == -1:
+                self.chassis2.configure(text= "lowered")
+            else:
+                self.chassis2.configure(text= "up")
+
+            if self.spike.Attmheight == -1:
+                self.attachment2.configure(text= "lowered")
+            else:
+                self.attachment2.configure(text= "up")
 
             # - update canvas
             self.canvas.delete("all")
