@@ -25,6 +25,7 @@ obstaclesY = []
 offsetX = 0
 offsetY = 0
 isRunning = False
+
 def stop():
     global running
     running = False
@@ -72,7 +73,6 @@ def getSpeed(s: socket):
             valuespeed = int(valuespeed2)
         else:
             valuespeed = "Error"
-        print(valuespeed)
         return valuespeed
 
 def getAngle(s: socket):
@@ -279,15 +279,18 @@ def updatecanvas():
     global obstaclesY
     global offsetX
     global offsetY
+    global arrow
     mapSize = 20
     obstacleX = 0
     obstacleY = 0
     rotation = 0
     Winkel2 = 0
     Geschw = 0
-    Geschw2 = 0        
+    Geschw2 = 0    
+    gray = (128,128,128)
     image = Image.open(r"C:\Users\karst\Documents\GitHub\Lego-feldscwarm-modell\Programmierung_Lego_Feldschwarm_Modell\neue Version\Arrow.png")
     resized_img = image.resize((20, 20))
+    
     img = ImageTk.PhotoImage(resized_img, master = canvas)
     arrow = Tk.Label(Freew, image=img, bd = 0)
     while not isStalled(s):
@@ -303,6 +306,7 @@ def updatecanvas():
         Geschw = getSpeed(s)
         Winkel = getAngle(s)
         
+
         if (Abstand > -1):
             Abstand2 = Abstand
             Abstandtxt = str(Abstand)
@@ -346,17 +350,26 @@ def updatecanvas():
         if Geschw2 != 0:
             coordinatesX.append(positionX + Geschw2/mapSize * math.cos(math.radians(rotation))); 
             coordinatesY.append(positionY + Geschw2/mapSize * math.sin(math.radians(rotation)));
+
         if Abstand2 != 0:
-            obstacleX = (positionX + (math.cos(math.radians(rotation)) * Abstand2 * 0.75)); 
-            obstacleY = (positionY + (math.sin(math.radians(rotation)) * Abstand2 * 0.75));
+            obstacleX = (positionX + offsetX+ (math.cos(math.radians(rotation)) * Abstand2 * 0.75)); 
+            obstacleY = (positionY + offsetY+ (math.sin(math.radians(rotation)) * Abstand2 * 0.75));
             obstaclesX.append(obstacleX)
             obstaclesY.append(obstacleY)
             canvas.create_rectangle( obstacleX+5, obstacleY+5, obstacleX-5, obstacleY-5, outline = 'black', fill = 'black')
-        if positionX < 800 and positionY < 800 and positionX > 50 and positionY > 50:
+        if positionX + offsetX < 800 and positionY + offsetY < 800 and positionX + offsetX > 50 and positionY + offsetY > 50:
             i = canvas.create_line(positionX + offsetX, positionY + offsetY, coordinatesX[len(coordinatesX)-1] + offsetX, coordinatesY[len(coordinatesY)-1] + offsetY, fill = "red")
+            arrow.place(x = positionX -10 + offsetX, y = positionY -10 + offsetY)
+            rotated_img = resized_img.rotate(rotation*-1+180, resample=Image.BICUBIC, expand=False, fillcolor = gray)
+            img = ImageTk.PhotoImage(rotated_img, master = canvas)
+            arrow.config(image = img)
+            arrow.image = img
+        else:
+            arrow.place(x = 10000, y = 10000)
             
-        resized_img = resized_img.rotate(Winkel2 * Geschw2 / 800)
-        img = ImageTk.PhotoImage(resized_img, master = canvas)
+        
+        #resized_img = resized_img.rotate(Winkel2 * Geschw2 / 800)
+        #img = ImageTk.PhotoImage(resized_img, master = canvas)
         if keyboard.is_pressed("+"):
             updateMap(1.2)
             mapSize /= 1.2
@@ -377,9 +390,9 @@ def updatecanvas():
             offsetX += 50
             updateMap(1)
 
+
         positionX = coordinatesX[len(coordinatesX)-1]
         positionY = coordinatesY[len(coordinatesY)-1]
-        arrow.place(x = positionX -10, y = positionY -10)
         distance.config(text = Abstandtxt)
         steering.config(text = Winkeltxt)
         time.sleep(0.2)
@@ -391,15 +404,17 @@ def updateMap(zoomvalue):
     global obstaclesY
     global offsetX
     global offsetY
+    global arrow
     canvas.create_rectangle( 50, 50, 800, 800, outline = 'gray', fill = 'gray')
     for i in range(0, len(coordinatesX)):
         coordinatesX[i] *= zoomvalue
         coordinatesY[i] *= zoomvalue
         if i != 0:
-            if coordinatesX[i] < 800 and coordinatesY[i] < 800 and coordinatesX[i] > 50 and coordinatesY[i] > 50:
+            if coordinatesX[i] + offsetX < 800 and coordinatesY[i]  + offsetY < 800 and coordinatesX[i]  + offsetX > 50 and coordinatesY[i]  + offsetY > 50:
+                print(coordinatesX[i])
                 canvas.create_line(coordinatesX[i-1] + offsetX, coordinatesY[i-1] + offsetY, coordinatesX[i] + offsetX, coordinatesY[i] + offsetY, fill = "red")
     for i in range(0, len(obstaclesX)):
         obstaclesX[i] *= zoomvalue
         obstaclesY[i] *= zoomvalue
-        if obstaclesX[i] < 800 and obstaclesX[i] < 800 and obstaclesY[i] > 50 and obstaclesY[i] > 50:
+        if obstaclesX[i]  + offsetX < 800 and obstaclesY[i]  + offsetY < 800 and obstaclesX[i]  + offsetX > 50 and obstaclesY[i]  + offsetY > 50:
                 canvas.create_rectangle(obstaclesX[i]+5 + offsetX, obstaclesY[i]+5 + offsetY, obstaclesX[i]-5 + offsetX, obstaclesY[i]-5+offsetY, fill = "black")
