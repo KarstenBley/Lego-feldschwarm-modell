@@ -4,7 +4,8 @@ import keyboard
 import threading
 import math
 import sys
-from tkinter import *
+import tkinter as Tk
+from PIL import Image, ImageTk
 import turtle
 
 import time
@@ -16,7 +17,14 @@ PositionC = int
 angleE = int
 distanceD = float
 running = bool
-running = True
+running = True    
+coordinatesX = [425]
+coordinatesY = [500]
+obstaclesX = []
+obstaclesY = []
+offsetX = 0
+offsetY = 0
+isRunning = False
 
 def stop():
     global running
@@ -24,7 +32,9 @@ def stop():
 
 
 def sendToSpike(s: socket, cmd: str):
+    isRunning = True
     eot = b'\x04' + b'\x04' + bytes('>', 'UTF-8')
+    neot = b'\r\n' + b'\x04' + bytes('>', 'UTF-8')
 
     # sendToSpike the command
     s.send(bytes(cmd, 'UTF-8') + b'\x04')
@@ -36,7 +46,9 @@ def sendToSpike(s: socket, cmd: str):
         data.extend(tmp)
         if (data.endswith(eot)):
             break
-
+        if (data.endswith(neot)):
+            print("fatal error (lol)")
+            break
     return bytes(data[:len(data) - 3])
 
 def getDistance(s: socket):
@@ -61,7 +73,6 @@ def getSpeed(s: socket):
             valuespeed = int(valuespeed2)
         else:
             valuespeed = "Error"
-            
         return valuespeed
 
 def getAngle(s: socket):
@@ -79,14 +90,10 @@ def getAngle(s: socket):
 def isStalled(s: socket):
     global valueStalled2
     dataStalled = sendToSpike(s, "print(SteeringE.was_stalled())")
-    print(dataStalled)
     if (dataStalled.startswith(bytes('OK', 'UTF-8')) and dataStalled.endswith(bytes('\r\n', 'UTF-8'))):
         valueStalled2 = dataStalled[2:len(dataStalled)-2]
-        print(valueStalled2)
         if valueStalled2.startswith(bytes('True', 'UTF-8')):
-            print("Trued")
             return True
-    print("Falsed")
     return False
 
 
@@ -100,7 +107,7 @@ def Freerun():
     global canvas
     global Freew
 
-    Freew = Tk()
+    Freew = Tk.Tk()
     Freew.title('FreeMode')
     Freew.geometry("1500x900+10+10")
     Freew.configure(bg='lightgray')
@@ -183,99 +190,65 @@ def Freerun():
         sendToSpike(s,"DistanceSensorD.light_up_all(100)")
         
         print(data)
-
-
         
-
         x = 0
 
-        canvas = Canvas(Freew, width = 1500, height = 900)
-        """
-        forward
-        canvas.create_polygon(100,500,200,600,200,400, outline = 'black', fill = 'black')
-        canvas.create_rectangle( 200, 450, 350, 550, outline = 'black', fill = 'black')
-        left
-        canvas.create_polygon( 425, 100, 325, 250, 525, 250, outline = 'black', fill = 'black')
-        canvas.create_rectangle( 375, 250, 475, 400, outline = 'black', fill = 'black')
-        right
-        canvas.create_polygon( 750, 500, 650, 400, 650, 600, outline = 'black', fill = 'black')
-        canvas.create_rectangle( 500, 450, 650, 550, outline = 'black', fill = 'black')
-        backwards
-        canvas.create_polygon( 425, 850, 325, 750, 525, 750, outline = 'black', fill = 'black')
-        canvas.create_rectangle( 375, 600, 475, 750, outline = 'black', fill = 'black')
-        """
+        canvas = Tk.Canvas(Freew, width = 1500, height = 900)
         canvas.grid()
         
-    
+        canvas.create_rectangle( 50, 50, 800, 800, outline = 'gray', fill = 'gray')
         #
-        speed=Label(Freew, text="Geschwindigkeit:", fg='blue', font=("Helvetica", 30))
+        speed=Tk.Label(Freew, text="Geschwindigkeit:", fg='blue', font=("Helvetica", 30))
         speed.place(x=900, y=150)
-        speed=Label(Freew, text= "Test", fg='blue', font=("Helvetica", 30))
+        speed=Tk.Label(Freew, text= "Test", fg='blue', font=("Helvetica", 30))
         speed.place(x=1300, y=150)
         #
-        distance=Label(Freew, text="Abstand:", fg='blue', font=("Helvetica", 30))
+        distance=Tk.Label(Freew, text="Abstand:", fg='blue', font=("Helvetica", 30))
         distance.place(x=900, y=200)
-        distance=Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
+        distance=Tk.Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
         distance.place(x=1300, y=200)
         #
-        steering=Label(Freew, text="Winkel Steuerung:", fg='blue', font=("Helvetica", 30))
+        steering=Tk.Label(Freew, text="Winkel Steuerung:", fg='blue', font=("Helvetica", 30))
         steering.place(x=900, y=250)
-        steering=Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
+        steering=Tk.Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
         steering.place(x=1300, y=250)
         #
-        attachment=Label(Freew, text="Position Gerät:", fg='blue', font=("Helvetica", 30))
+        attachment=Tk.Label(Freew, text="Position Gerät:", fg='blue', font=("Helvetica", 30))
         attachment.place(x=900, y=300)
-        attachement=Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
+        attachement=Tk.Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
         attachement.place(x=1300, y=300)
         #
-        chassis=Label(Freew, text="Position Chassis:", fg='blue', font=("Helvetica", 30))
+        chassis=Tk.Label(Freew, text="Position Chassis:", fg='blue', font=("Helvetica", 30))
         chassis.place(x=900, y=350)
-        chassis=Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
+        chassis=Tk.Label(Freew, text="Test", fg='blue', font=("Helvetica", 30))
         chassis.place(x=1300, y=350)
 
-        quit = Button(Freew, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Freew.destroy(), s.close()])
+        quit = Tk.Button(Freew, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Freew.destroy(), s.close()])
         quit.place(x=1269,y=700)
-
         
-        #angleReset = Button(Freew, text="reset angle", fg='blue', font=("Helvetica", 40), command=sendToSpike(s,"SteeringE.set_degrees_counted(0)"))
-        #angleReset.place(x=900,y=700)
+        x = threading.Thread(target=updatecanvas)
+        x.start()
+                
         keyboard.on_press_key("w", lambda _:sendToSpike(s,"AccelerationB.start(-100)"))
-        #keyboard.on_press_key("w", lambda _:canvas.create_polygon(425, 100, 325, 250, 525, 250, outline = 'blue', fill = 'blue'))
-        #keyboard.on_press_key("w", lambda _:canvas.create_rectangle( 375, 250, 475, 400, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("w",lambda _: sendToSpike(s,"AccelerationB.stop()"))
-        #keyboard.on_release_key("w", lambda _:canvas.create_polygon(425, 100, 325, 250, 525, 250, outline = 'black', fill = 'black'))
-        #keyboard.on_release_key("w", lambda _:canvas.create_rectangle( 375, 250, 475, 400, outline = 'black', fill = 'black'))
         #backwards
         keyboard.on_press_key("s", lambda _:sendToSpike(s,"AccelerationB.start(75)"))
-        #keyboard.on_press_key("s", lambda _:canvas.create_polygon(425, 850, 325, 750, 525, 750, outline = 'blue', fill = 'blue'))
-        #keyboard.on_press_key("s", lambda _:canvas.create_rectangle( 375, 600, 475, 750, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("s",lambda _: sendToSpike(s,"AccelerationB.stop()"))
-        #keyboard.on_release_key("s", lambda _:canvas.create_polygon(425, 850, 325, 750, 525, 750, outline = 'black', fill = 'black'))
-        #keyboard.on_release_key("s", lambda _:canvas.create_rectangle( 375, 600, 475, 750, outline = 'black', fill = 'black'))
         #left
         keyboard.on_press_key("a", lambda _:sendToSpike(s,"SteeringE.start(15)"))
-        #keyboard.on_press_key("a", lambda _:canvas.create_polygon(100,500,200,600,200,400, outline = 'blue', fill = 'blue'))
-        #keyboard.on_press_key("a", lambda _:canvas.create_rectangle( 200, 450, 350, 550, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("a",lambda _: sendToSpike(s,"SteeringE.stop()"))
-        #keyboard.on_release_key("a", lambda _:canvas.create_polygon(100,500,200,600,200,400, outline = 'black', fill = 'black'))
-        #keyboard.on_release_key("a", lambda _:canvas.create_rectangle( 200, 450, 350, 550, outline = 'black', fill = 'black'))
         #right
         keyboard.on_press_key("d", lambda _:sendToSpike(s,"SteeringE.start(-15)"))
-        #keyboard.on_press_key("d", lambda _:canvas.create_polygon(750, 500, 650, 400, 650, 600, outline = 'blue', fill = 'blue'))
-        #keyboard.on_press_key("d", lambda _:canvas.create_rectangle( 500, 450, 650, 550, outline = 'blue', fill = 'blue'))
         keyboard.on_release_key("d",lambda _: sendToSpike(s,"SteeringE.stop()"))
-        #keyboard.on_release_key("d", lambda _:canvas.create_polygon(750, 500, 650, 400, 650, 600, outline = 'black', fill = 'black'))
-        #keyboard.on_release_key("d", lambda _:canvas.create_rectangle( 500, 450, 650, 550, outline = 'black', fill = 'black'))
         #chassis up and down
         keyboard.on_press_key("y", lambda _:sendToSpike(s,"Chassis.run_for_rotations(5)"))
-        keyboard.on_press_key("x",lambda _: sendToSpike(s,"Chassis.run_for_rotations(-5)"))
+        keyboard.on_press_key("x", lambda _: sendToSpike(s,"Chassis.run_for_rotations(-5)"))
         #Attachment up and down
         keyboard.on_press_key("f", lambda _:sendToSpike(s,"Attachment.run_for_rotations(2)"))
         keyboard.on_press_key("r", lambda _:sendToSpike(s,"Attachment.run_for_rotations(-2)"))
+
         keyboard.on_press_key("u", lambda _:stop)
 
-        x = threading.Thread(target=updatecanvas)
-        x.start()
         Freew.mainloop()
         
         sendToSpike(s,"hub.display.show()")
@@ -295,20 +268,37 @@ def Freerun():
         exit()
 
 def updatecanvas():
+    IsMoving = False
+    GeschwBuffer=0
+    GeschwBufferMax = 50
     positionX = 425
     positionY = 500
-    nextPosX = 0
-    nextPosY = 0
+    global coordinatesX
+    global coordinatesY
+    global obstaclesX
+    global obstaclesY
+    global offsetX
+    global offsetY
+    global arrow
+    mapSize = 20
+    obstacleX = 0
+    obstacleY = 0
     rotation = 0
     Winkel2 = 0
-    Geschw2 = 0
+    Geschw = 0
+    Geschw2 = 0    
+    gray = (128,128,128)
+    image = Image.open(r"C:\Users\karst\Documents\GitHub\Lego-feldscwarm-modell\Programmierung_Lego_Feldschwarm_Modell\neue Version\Arrow.png")
+    resized_img = image.resize((20, 20))
+    
+    img = ImageTk.PhotoImage(resized_img, master = canvas)
+    arrow = Tk.Label(Freew, image=img, bd = 0)
     while not isStalled(s):
         distance.config(text = "Winkel wird eingestellt")
         steering.config(text = "Winkel wird eingestellt")
         speed.config(text= "Winkel wird eingestellt")
-
-        sendToSpike(s, "SteeringE.run_for_rotations(1)")
-    sendToSpike(s, "SteeringE.run_for_degrees(-53)")
+        sendToSpike(s, "SteeringE.run_for_degrees(100)")
+    sendToSpike(s, "SteeringE.run_for_degrees(-45)")
     sendToSpike(s, "SteeringE.set_degrees_counted(0)")
     speed.config(text= "0")
     while True:
@@ -316,14 +306,17 @@ def updatecanvas():
         Geschw = getSpeed(s)
         Winkel = getAngle(s)
         
+
         if (Abstand > -1):
+            Abstand2 = Abstand
             Abstandtxt = str(Abstand)
         else:
+            Abstand2 = 0
             Abstandtxt = "fehler: zu große Entfernung"
-
         if (Winkel or Winkel == 0):
 
             if (Winkel != "Error"):
+                Winkel *=-1
                 Winkeltxt = str(Winkel)
             else:
                 Winkeltxt = "fehler beim lesen des Winkels"
@@ -332,31 +325,96 @@ def updatecanvas():
         if (Geschw or Geschw == 0):
             
             Geschw = Geschw * -1
-            if (Geschw != "Error"):
-                Geschwtxt = str(Geschw)
-            else:
+            if Geschw == "Error":
                 Geschwtxt = "fehler beim lesen der geschwindgkeit"
-            speed.config(text= Geschwtxt)
+                speed.config(text= Geschwtxt)
 
-        if (Geschw != None and Geschw != "Error"):
-            Geschw2 = Geschw
+        if Geschw != None and Geschw != "":
+            if Geschw != "Error":
+                if GeschwBuffer > GeschwBufferMax and int(Geschw) >= 0:
+                    Geschwtxt = str(Geschw)
+                    Geschw2 = Geschw
+                    speed.config(text= Geschwtxt)
+                elif GeschwBuffer < -GeschwBufferMax and int(Geschw) <= 0:
+                    Geschwtxt = str(Geschw)
+                    Geschw2 = Geschw
+                    speed.config(text= Geschwtxt)
+                else:
+                    GeschwBuffer += Geschw
+                    
+        if Winkel != None:
+             if Winkel != "Error":
+                 Winkeltxt = str(Winkel)
+                 Winkel2 = Winkel
+        rotation += Winkel2 * Geschw2 / 800
+        if Geschw2 != 0:
+            coordinatesX.append(positionX + Geschw2/mapSize * math.cos(math.radians(rotation))); 
+            coordinatesY.append(positionY + Geschw2/mapSize * math.sin(math.radians(rotation)));
+
+        if Abstand2 != 0:
+            obstacleX = (positionX + offsetX+ (math.cos(math.radians(rotation)) * Abstand2 * 0.75)); 
+            obstacleY = (positionY + offsetY+ (math.sin(math.radians(rotation)) * Abstand2 * 0.75));
+            obstaclesX.append(obstacleX)
+            obstaclesY.append(obstacleY)
+            canvas.create_rectangle( obstacleX+5, obstacleY+5, obstacleX-5, obstacleY-5, outline = 'black', fill = 'black')
+        if positionX + offsetX < 800 and positionY + offsetY < 800 and positionX + offsetX > 50 and positionY + offsetY > 50:
+            i = canvas.create_line(positionX + offsetX, positionY + offsetY, coordinatesX[len(coordinatesX)-1] + offsetX, coordinatesY[len(coordinatesY)-1] + offsetY, fill = "red")
+            arrow.place(x = positionX -10 + offsetX, y = positionY -10 + offsetY)
+            rotated_img = resized_img.rotate(rotation*-1+180, resample=Image.BICUBIC, expand=False, fillcolor = gray)
+            img = ImageTk.PhotoImage(rotated_img, master = canvas)
+            arrow.config(image = img)
+            arrow.image = img
         else:
-            Geschw2 = 0
+            arrow.place(x = 10000, y = 10000)
+            
+        
+        #resized_img = resized_img.rotate(Winkel2 * Geschw2 / 800)
+        #img = ImageTk.PhotoImage(resized_img, master = canvas)
+        if keyboard.is_pressed("+"):
+            updateMap(1.2)
+            mapSize /= 1.2
+        if keyboard.is_pressed("-"):
+            updateMap(0.8)
+            mapSize /= 0.8
 
-        if (Winkel != None and Winkel != "Error"):
-            Winkel2 = Winkel
-        else:
-            Winkel2 = 0
-        rotation += Winkel2 * Geschw2 /200
-        #print(rotation)
-        radians = (math.pi / 180) * (90 - rotation); 
-        nextPosX = (int)(positionX + Geschw2/5 * math.cos(radians)); 
-        nextPosY = (int)(positionY + Geschw2/5 * math.sin(radians));
-        canvas.create_line(positionX, positionY, nextPosX, nextPosY, fill = "red")
-        positionX = nextPosX
-        positionY = nextPosY
+        if keyboard.is_pressed("up arrow"):
+            offsetY -= 50
+            updateMap(1)
+        elif keyboard.is_pressed("down arrow"):
+            offsetY += 50
+            updateMap(1)
+        elif keyboard.is_pressed("left arrow"):
+            offsetX -= 50
+            updateMap(1)
+        elif keyboard.is_pressed("right arrow"):
+            offsetX += 50
+            updateMap(1)
 
+
+        positionX = coordinatesX[len(coordinatesX)-1]
+        positionY = coordinatesY[len(coordinatesY)-1]
         distance.config(text = Abstandtxt)
         steering.config(text = Winkeltxt)
         time.sleep(0.2)
-        
+
+def updateMap(zoomvalue):
+    global coordinatesX
+    global coordinatesY
+    global obstaclesX
+    global obstaclesY
+    global offsetX
+    global offsetY
+    global arrow
+    canvas.create_rectangle( 50, 50, 800, 800, outline = 'gray', fill = 'gray')
+    for i in range(0, len(coordinatesX)):
+        coordinatesX[i] *= zoomvalue
+        coordinatesY[i] *= zoomvalue
+        if i != 0:
+            if coordinatesX[i] + offsetX < 800 and coordinatesY[i]  + offsetY < 800 and coordinatesX[i]  + offsetX > 50 and coordinatesY[i]  + offsetY > 50:
+                print(coordinatesX[i])
+                canvas.create_line(coordinatesX[i-1] + offsetX, coordinatesY[i-1] + offsetY, coordinatesX[i] + offsetX, coordinatesY[i] + offsetY, fill = "red")
+    for i in range(0, len(obstaclesX)):
+        obstaclesX[i] *= zoomvalue
+        obstaclesY[i] *= zoomvalue
+        if obstaclesX[i]  + offsetX < 800 and obstaclesY[i]  + offsetY < 800 and obstaclesX[i]  + offsetX > 50 and obstaclesY[i]  + offsetY > 50:
+                canvas.create_rectangle(obstaclesX[i]+5 + offsetX, obstaclesY[i]+5 + offsetY, obstaclesX[i]-5 + offsetX, obstaclesY[i]-5+offsetY, fill = "black")
