@@ -136,8 +136,10 @@ class Spike:
                 elif(data.endswith(neot)):
                     print("Systemfehler, überprüfen sie die Rechtschreibung der Befehle")
                     #self.s.close()
-                    #exit()
-                    quit()
+                    Window.stop()
+                    self.close()
+                    SystemExit()
+                    #quit()
             except:
                 print(data)
                 break

@@ -8,7 +8,6 @@ from turtle import window_width
 import turtle
 import Free
 import FieldMode
-import Test
 from webbrowser import get
 import keyboard
 from tkinter import ttk
@@ -28,10 +27,6 @@ fl = 0
 
 #def Stop():
 #    Free.running = False
-
-def testmode():
-    while TRUE:
-        Test.Testrun()
 
 def FreeMode():
     while TRUE:
@@ -102,8 +97,6 @@ def Start():
         field.place(x=300,y=400)
         free = Button(window1, text="Frei", fg='blue', font=('Helvetica',44), command = FreeMode)
         free.place(x=1000,y=400)
-        test = Button(window1, text="Test", fg='blue', font=('Helvetica',44), command = testmode)
-        test.place(x=650,y=550)
         window1.title('Select')
         window1.geometry("1500x900+10+10")
         window1.configure(bg='lightgray')

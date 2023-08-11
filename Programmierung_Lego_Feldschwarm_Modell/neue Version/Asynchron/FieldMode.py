@@ -29,7 +29,7 @@ def sendToSpike(s: socket, cmd: str):
       if (data.endswith(eot)):
          break
       elif(data.endswith(neot)):
-         print("systemFehler, überprüfen sie die Rechtschreibung der Befehle")
+         print("Systemfehler, überprüfen Sie die Rechtschreibung der Befehle")
          exit()
 
    return bytes(data[:len(data) - 3])
@@ -46,6 +46,15 @@ def getDistance(s: socket):
       return value
    else:
       return -2
+   
+def getSensorData(s: socket):
+    data = sendToSpike(s, "getSensorData()")
+    if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
+        valuesStr = data[2:len(data)-2]
+        values = valuesStr.split(b',')
+        return list(map(lambda x: int(x) if x != b'None' else -1, values))
+    else:
+        return list()
     
 
 def sendwithtest(s: socket, cmd):
@@ -57,6 +66,52 @@ def sendwithtest(s: socket, cmd):
    while distancetest <= 5:
       print("blockiert")
       distancetest = getDistance(s)
+
+def RunForRotations(s: socket, rota):
+    global Abstand
+    global rotations
+    Abstand = 0
+    speed = 0
+    Steeringangle = 0
+    rotations = 0
+    r = 0
+    data = sendToSpike(s, "AccelerationB.set_degrees_counted(0)")
+    print(data)
+    while True:
+        if rota < 0:
+            data = sendToSpike(s, "AccelerationB.start(-75)")
+            print(data)
+            r = -1
+            rota = rota *-1
+        elif rota > 0:
+            data = sendToSpike(s, "AccelerationB.start(75)")
+            print(data)
+            r = 1            
+        #
+        values = getSensorData(s)
+        if (len(values) == 4):
+            Abstand = values[0]
+            speed = values[1]
+            Steeringangle = values[2]
+            rotations = values[3]
+            rotations = rotations / 360 * r
+        distancetest = Abstand
+        #
+        if (distancetest != -1):
+            print(distancetest)
+        while distancetest <= 5 and distancetest >= 0:
+            print("blockiert")
+            data = sendToSpike(s, "AccelerationB.stop()")
+            print(data)
+            distancetest = getDistance(s)
+        #
+        if rotations >= rota:
+            data = sendToSpike(s, "AccelerationB.stop()")
+            print(data)
+            break
+
+   
+
 
 
 
@@ -118,197 +173,117 @@ def runfieldmode(y,b,anz):
    data = sendToSpike(s, "DistanceSensorD.light_up_all(100)")
    print(data)
 
-   #connecting second lego hub
-   if bnz == 2:
-      adapter_addr2 = ""
-      port2 = 1  # Normal port for rfcomm?
-      buf_size = 1024
+   data = sendToSpike(s,"def getSensorData():\r\n    print(str(DistanceSensorD.get_distance_cm()) + ',' + str(AccelerationB.get_speed()*-1) + ',' + str(int(SteeringE.get_degrees_counted()/2)) + ',' + str(int(AccelerationB.get_degrees_counted())))")
+   print(data)
 
-      s2 = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-      s2.connect((adapter_addr2, port2))
-
-      time.sleep(0.1)
-      data = s.recv(1024)
-      print(data)
-
-      s2.send(b'\x03')
-      time.sleep(0.1)
-      s2.send(b'\x01')
-      data = s.recv(1024)
-      print(data)
-
-      #setting up second hub
-      data = sendToSpike(s2,"from spike import Motor, DistanceSensor")
-      print(data)
-
-      data = sendToSpike(s2,"AccelerationB = Motor('B')")
-      print(data)
-
-      data = sendToSpike(s2,"SteeringE = Motor('E')")
-      print(data)
-
-      data = sendToSpike(s2,"Chassis = Motor('C')")
-      print(data)
-
-      data = sendToSpike(s2,"Attachment = Motor('A')")
-      print(data)
-
-      data = sendToSpike(s2,"DistanceSensorD = DistanceSensor('D')")
-      print(data)
-
-      data = sendToSpike(s2,"SteeringE.set_stall_detection(True)")
-      print(data)
-
-      data = sendToSpike(s2,"SteeringE.set_stop_action('hold')")
-      print(data)
-
-      data = sendToSpike(s2,"hub.display.show('hello')")
-      print(data)
-
-      data = sendToSpike(s2,"DistanceSensorD.light_up_all(100)")
-      print(data)
-   
-   #turtle.goto()
-
-   #turtle.penup()
-   #turtle.goto(-400,350)
-   #turtle.speed(1)
-   
    while a < b:
       
-      #lower chassis and attachment
-      sendwithtest(s, "Chassis.run_for_rotations(5)")
-      print(data)
+        #lower chassis and attachment
+        sendToSpike(s, "Chassis.run_for_rotations(5)")
+        print(data)
 
-      sendwithtest(s, "Attachment.run_for_rotations(2)")
-      print(data)
+        sendToSpike(s, "Attachment.run_for_rotations(2)")
+        print(data)
+        
+        #Field = Tk()
+        #Status = Label(Field,text = "Status:", fg='blue', font=("Helvetica", 40))
+        #Status.place(x = 400,y = 500)
+        #Statusanzeige = Label(Field, text = "Feldbearbeitung laufend", fg='blue', font=("Helvetica", 40))
+        #Statusanzeige.place(x = 600, y = 500)
       
-      #Field = Tk()
-      #Status = Label(Field,text = "Status:", fg='blue', font=("Helvetica", 40))
-      #Status.place(x = 400,y = 500)
-      #Statusanzeige = Label(Field, text = "Feldbearbeitung laufend", fg='blue', font=("Helvetica", 40))
-      #Statusanzeige.place(x = 600, y = 500)
-      
-      #print(x,y)
-      while a < b:
-         
-         #drive forward
-         sendwithtest(s, "AccelerationB.run_for_rotations(-3)")
-         print(data)
-         x = x + 1
-         #turtle.forward(10)
-         
-         print("geradeaus")
-         if x == y:
-            if (a % 2) == 0:
-               
-               #turn right
-               sendwithtest(s, "Attachment.run_for_rotations(-2)")
-               print(data)
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(-35)")
-               print(data)
-               #
-               f = 0
-               while f < 19:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(-1)")
-                  print(data)
-                  f = f+1
-               #
-               #turtle.circle(-50,90)
-               #turtle.forward(30)
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(35)")
-               print(data)
-               #
-               while bnz < anz:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(-3)")
-                  
-                  
-                  print(data)
-                  bnz = bnz +1
-               #
-               bnz = 0
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(35)")
-               print(data)
-               #
-               f = 0
-               while f < 19:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(1)")
-                  print(data)
-                  f = f+1
-               #
-               #turtle.circle(50,-90)
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(-35)")
-               print(data)
-               #
-               f = 0
-               while f < 15:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(-1)")
-                  print(data)
-                  f = f+1
-               #
-               #turtle.forward(100)
-               #
-               sendwithtest(s, "Attachment.run_for_rotations(2)")
-               print(data)
-               
-               a = a + 1
-               x = 0
-               #print(a,b)
-               print("wenden1")
-            else :
-               
-               #turn left
-               sendwithtest(s, "Attachment.run_for_rotations(-2)")
-               print(data)
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(35)")
-               print(data)
-               #
-               f = 0
-               while f < 15:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(-1)")
-                  print(data)
-                  f = f+1
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(-35)")
-               print(data)
-               #
-               while bnz < anz:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(-3)")
-                  print(data)
-                  bnz = bnz +1
-               #
-               bnz = 0
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(-35)")
-               print(data)
-               #
-               f = 0
-               while f < 19:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(19)")
-                  print(data)
-                  f = f+1
-               #
-               sendwithtest(s, "SteeringE.run_for_degrees(35)")
-               print(data)
-               #
-               f = 0
-               while f < 15:
-                  sendwithtest(s, "AccelerationB.run_for_rotations(-15)")
-                  print(data)
-                  f = f+1
-               #
-               sendwithtest(s, "Attachment.run_for_rotations(2)")
-               print(data)
-               
-               a = a + 1
-               x = 0
-               #print(a,b)
-               print("wenden2")
+        #print(x,y)
+        RunForRotations(s,y*3)
+        if (a % 2) == 0:
+            
+            #turn right
+            sendToSpike(s, "Attachment.run_for_rotations(-2)")
+            print(data)
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(-35)")
+            print(data)
+            #
+            f = 0
+            RunForRotations(s,-19)
+            #
+            #turtle.circle(-50,90)
+            #turtle.forward(30)
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(35)")
+            print(data)
+            #
+            while bnz < anz:
+                RunForRotations(s,-3)
+                
+                
+                print(data)
+                bnz = bnz +1
+            #
+            bnz = 0
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(35)")
+            print(data)
+            #
+            f = 0
+            RunForRotations(s,19)
+            #
+            #turtle.circle(50,-90)
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(-35)")
+            print(data)
+            #
+            f = 0
+            RunForRotations(s,-15)
+            #
+            #turtle.forward(100)
+            #
+            sendToSpike(s, "Attachment.run_for_rotations(2)")
+            print(data)
+            
+            a = a + 1
+            x = 0
+            #print(a,b)
+            print("wenden1")
+        else :
+            
+            #turn left
+            sendToSpike(s, "Attachment.run_for_rotations(-2)")
+            print(data)
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(35)")
+            print(data)
+            #
+            f = 0
+            RunForRotations(s,-19)
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(-35)")
+            print(data)
+            #
+            while bnz < anz:
+                RunForRotations(s,-3)
+                print(data)
+                bnz = bnz +1
+            #
+            bnz = 0
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(-35)")
+            print(data)
+            #
+            f = 0
+            RunForRotations(s,19)
+            #
+            sendToSpike(s, "SteeringE.run_for_degrees(35)")
+            print(data)
+            #
+            f = 0
+            RunForRotations(s,-15)
+            #
+            sendToSpike(s, "Attachment.run_for_rotations(2)")
+            print(data)
+            
+            a = a + 1
+            x = 0
+            #print(a,b)
+            print("wenden2")
                
          #quit=Button(Field, text="quit", fg='blue', font=("Helvetica", 40), command=lambda:[stop(), Field.destroy()])
          #quit.place(x=1269,y=700)
@@ -319,36 +294,27 @@ def runfieldmode(y,b,anz):
          #Field.mainloop()
          
         
-      #Statusanzeige.configure(text="fertig")
+        #Statusanzeige.configure(text="fertig")
       
-      #raise attachment and chassis   
-      sendwithtest(s, "Chassis.run_for_rotations(-5)")
-      print(data)
+        #raise attachment and chassis   
+        sendToSpike(s, "Chassis.run_for_rotations(-5)")
+        print(data)
 
-      sendwithtest(s, "Attachment.run_for_rotations(-2)")
-      print(data) 
-      
-      #loop break
-      """
-      if running == False:
-         break
-      """
-      """
-      if Field.destroy:
-         break       
-      """
-      text = input()
-      if text == "quit":
-         break
-      
-      break
+        sendToSpike(s, "Attachment.run_for_rotations(-2)")
+        print(data) 
 
-   #blink   
-   sendwithtest(s, "DistancesensorD.light_up_all(0)")
-   print(data)
-   sendwithtest(s, "DistancesensorD.light_up_all(100)")
-   print(data)
-   sendwithtest(s, "DistancesensorD.light_up_all(0)")
-   print(data)
-   s.close()
+        #loop break
+        """
+        if running == False:
+           break
+        """
+        """
+        if Field.destroy:
+           break       
+        """
+        text = input()
+        if text == "quit":
+           break
+         
+        break
    exit()
