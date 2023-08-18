@@ -36,7 +36,7 @@ upDown = [False]
 FM.mapSize = 20
 
 def FreeMode():
-    while TRUE:
+    while True:
         Free.Freerun()
 
 def Fieldsetup():
