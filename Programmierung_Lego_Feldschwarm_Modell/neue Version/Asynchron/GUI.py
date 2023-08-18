@@ -33,7 +33,7 @@ offsetY = 0
 coordinatesX = [425]
 coordinatesY = [500]
 upDown = [False]
-mapSize = 20
+FM.mapSize = 20
 
 def FreeMode():
     while TRUE:
@@ -108,7 +108,6 @@ def updatecanvas():
     global coordinatesY
     global offsetX
     global offsetY
-    global mapSize
     global upDown
     coordinatesX = [400]
     coordinatesY = [400]
@@ -127,9 +126,9 @@ def updatecanvas():
         
         if FM.speed != 0 and FM.speed != None:
             if FM.positionX + offsetX < 750 and FM.positionY + offsetY < 750 and FM.positionX + offsetX > 50 and FM.positionY + offsetY > 50:
-                coordinatesX.append(FM.positionX + FM.speed / mapSize *
+                coordinatesX.append(FM.positionX + FM.speed / FM.mapSize *
                                     math.cos(math.radians(FM.Heading - 90)))
-                coordinatesY.append(FM.positionY + FM.speed / mapSize *
+                coordinatesY.append(FM.positionY + FM.speed / FM.mapSize *
                                     math.sin(math.radians(FM.Heading - 90)))
                 arrow.place(x=FM.positionX - 10 + offsetX, y=FM.positionY - 10 + offsetY)
                 rotated_img = resized_img.rotate(FM.Heading*-1-90,
@@ -165,14 +164,14 @@ def updatecanvas():
                         y=FM.positionY * 1.2 - 10 + offsetY)
             updateMap(1.2)
 
-            mapSize /= 1.2
+            FM.mapSize /= 1.2
             arrow.place(x=FM.positionX - 10 + offsetX, y=FM.positionY - 10 + offsetY)
 
         if keyboard.is_pressed("-"):
             arrow.place(x=FM.positionX * 0.8 - 10 + offsetX,
                         y=FM.positionY * 0.8 - 10 + offsetY)
             updateMap(0.8)
-            mapSize /= 0.8
+            FM.mapSize /= 0.8
             arrow.place(x=FM.positionX - 10 + offsetX, y=FM.positionY - 10 + offsetY)
         if keyboard.is_pressed("up arrow"):
             offsetY -= 50

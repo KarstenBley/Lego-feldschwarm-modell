@@ -17,6 +17,9 @@ positionY = 400
 Heading = 90
 broken = False
 Attachment_up = True
+mapSize = 20
+
+
 def stop():
     global running
     running = False
@@ -35,8 +38,9 @@ def sendToSpike(s: socket, cmd: str):
         data.extend(tmp)
         if (data.endswith(eot)):
             break
-        elif(data.endswith(neot)):
-            print("Systemfehler, überprüfen Sie die Rechtschreibung der Befehle")
+        elif (data.endswith(neot)):
+            print(
+                "Systemfehler, überprüfen Sie die Rechtschreibung der Befehle")
             exit()
 
     return bytes(data[:len(data) - 3])
@@ -44,7 +48,8 @@ def sendToSpike(s: socket, cmd: str):
 
 def getDistance(s: socket):
     data = sendToSpike(s, "print(DistanceSensorD.get_distance_cm())")
-    if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
+    if (data.startswith(bytes('OK', 'UTF-8'))
+            and data.endswith(bytes('\r\n', 'UTF-8'))):
         value = data[2:len(data) - 2]
         if value != b'None':
             value = int(value)
@@ -53,16 +58,18 @@ def getDistance(s: socket):
         return value
     else:
         return -2
-   
+
+
 def getSensorData(s: socket):
     data = sendToSpike(s, "getSensorData()")
-    if (data.startswith(bytes('OK', 'UTF-8')) and data.endswith(bytes('\r\n', 'UTF-8'))):
+    if (data.startswith(bytes('OK', 'UTF-8'))
+            and data.endswith(bytes('\r\n', 'UTF-8'))):
         valuesStr = data[2:len(data) - 2]
         values = valuesStr.split(b',')
         return list(map(lambda x: int(x) if x != b'None' else -1, values))
     else:
         return list()
-    
+
 
 def sendwithtest(s: socket, cmd):
     data = sendToSpike(s, cmd)
@@ -71,18 +78,32 @@ def sendwithtest(s: socket, cmd):
         print("blockiert")
         distancetest = getDistance(s)
 
-def Autopilot(s: socket, rota = None, TargetHeading = None, direction = None, stayStraight = False, destinationY = None, destinationX = None):
+
+def Autopilot(s: socket,
+              rota=None,
+              TargetHeading=None,
+              direction=None,
+              stayStraight=False,
+              destinationY=None,
+              destinationX=None):
     print("started")
     global Abstand
     global rotations
     global speed
     global Steeringangle
     global Heading
+    global mapSize
     Abstand = 0
     speed = 0
     Steeringangle = 0
     rotations = 0
     r = 0
+    if destinationX:
+        destinationX /= mapSize
+        destinationX *= 20
+    if destinationY:
+        destinationY /= mapSize
+        destinationY *= 20
     data = sendToSpike(s, "AccelerationB.set_degrees_counted(0)")
     while True:
         if rota != None:
@@ -110,7 +131,7 @@ def Autopilot(s: socket, rota = None, TargetHeading = None, direction = None, st
         if speed > 0:
             Heading += Steeringangle * speed / 2000
         elif speed < 0:
-            Heading += Steeringangle * speed*-1 / 2000
+            Heading += Steeringangle * speed * -1 / 2000
         distancetest = Abstand
         if Heading <= 0:
             Heading = 360 + (Heading % 360)
@@ -152,7 +173,7 @@ def Autopilot(s: socket, rota = None, TargetHeading = None, direction = None, st
                 print("ended")
                 break
         if TargetHeading == 360:
-           if Heading > 358:
+            if Heading > 358:
                 data = sendToSpike(s, "AccelerationB.stop()")
                 values = getSensorData(s)
                 speed = 0
@@ -164,13 +185,13 @@ def Autopilot(s: socket, rota = None, TargetHeading = None, direction = None, st
                 speed = 0
                 break
         elif Steeringangle < 0 and TargetHeading != None and direction == -1:
-            if Heading >= TargetHeading and Heading < TargetHeading +1:
+            if Heading >= TargetHeading and Heading < TargetHeading + 1:
                 data = sendToSpike(s, "AccelerationB.stop()")
                 values = getSensorData(s)
                 speed = 0
                 break
         elif Steeringangle < 0 and TargetHeading != None and direction == 1:
-            if Heading <= TargetHeading and Heading > TargetHeading -1:
+            if Heading <= TargetHeading and Heading > TargetHeading - 1:
                 data = sendToSpike(s, "AccelerationB.stop()")
                 values = getSensorData(s)
                 speed = 0
@@ -184,40 +205,54 @@ def Autopilot(s: socket, rota = None, TargetHeading = None, direction = None, st
         if stayStraight:
             Steeringangle = getAngle(s)
             if Steeringangle != 0:
-                sendToSpike(s, "SteeringE.run_for_degrees("+str(Steeringangle*-1)+")")
-                print("straightening")
+                sendToSpike(
+                    s, "SteeringE.run_for_degrees(" + str(Steeringangle * -1) +
+                    ")")
                 print(getAngle(s))
         if Heading > 180 and destinationY != None:
+
             Steeringangle = getAngle(s)
             if positionY > destinationY and Steeringangle < 2:
                 print("left")
-                sendToSpike(s, "SteeringE.run_for_degrees(10)")
+                sendToSpike(
+                    s, "SteeringE.run_for_degrees(" + str(10 - Steeringangle) +
+                    ")")
             if positionY < destinationY and Steeringangle > -2:
                 print("right")
-                sendToSpike(s, "SteeringE.run_for_degrees(-10)")
+                sendToSpike(
+                    s, "SteeringE.run_for_degrees(" + str(-10 - Steeringangle) + 
+                    ")")
             print(Steeringangle)
 
         elif Heading < 180 and destinationY != None:
             Steeringangle = getAngle(s)
             if positionY < destinationY and Steeringangle < 2:
                 print("left")
-                sendToSpike(s, "SteeringE.run_for_degrees(10)")
+                sendToSpike(
+                    s, "SteeringE.run_for_degrees(" + str(10 - Steeringangle) +
+                    ")")
             if positionY > destinationY and Steeringangle > -2:
                 print("right")
-                sendToSpike(s, "SteeringE.run_for_degrees(-10)")
-            print(Steeringangle)
-        
-
+                sendToSpike(
+                    s, "SteeringE.run_for_degrees(" +
+                    str(-10 - Steeringangle) + ")")
+    Steeringangle = getAngle(s)
+    if Steeringangle != 0:
+        sendToSpike(
+            s, "SteeringE.run_for_degrees(" + str(Steeringangle * -1) + ")")
+        print(getAngle(s))
 
 
 def isStalled(s: socket):
     global valueStalled2
     dataStalled = sendToSpike(s, "print(SteeringE.was_stalled())")
-    if (dataStalled.startswith(bytes('OK', 'UTF-8')) and dataStalled.endswith(bytes('\r\n', 'UTF-8'))):
+    if (dataStalled.startswith(bytes('OK', 'UTF-8'))
+            and dataStalled.endswith(bytes('\r\n', 'UTF-8'))):
         valueStalled2 = dataStalled[2:len(dataStalled) - 2]
         if valueStalled2.startswith(bytes('True', 'UTF-8')):
             return True
     return False
+
 
 def getAngle(s: socket):
     global valueAngle2
@@ -233,23 +268,26 @@ def getAngle(s: socket):
 
         return valueAngle
 
-def runfieldmode(y,b,anz):
+
+def runfieldmode(y, b, anz):
     print(b)
     global Attachment_up
     global Heading
     global positionX
     destinationX = 0
+    destinationY = 400
     a = 0
     x = 0
     bnz = 0
-   
+
     #connecting with lego hub
     #first hub: ac:1f:0f:1d:61:c1
     #second hub: 64:8c:bb:08:8f:24
     adapter_addr = "ac:1f:0f:1d:61:c1"
     port = 1  # Normal port for rfcomm?
     buf_size = 1024
-    s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+    s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM,
+                      socket.BTPROTO_RFCOMM)
     s.connect((adapter_addr, port))
 
     time.sleep(0.1)
@@ -293,7 +331,10 @@ def runfieldmode(y,b,anz):
     data = sendToSpike(s, "DistanceSensorD.light_up_all(100)")
     print(data)
 
-    data = sendToSpike(s,"def getSensorData():\r\n    print(str(DistanceSensorD.get_distance_cm()) + ',' + str(AccelerationB.get_speed()*-1) + ',' + str(int(SteeringE.get_degrees_counted()/2)) + ',' + str(int(AccelerationB.get_degrees_counted())))")
+    data = sendToSpike(
+        s,
+        "def getSensorData():\r\n    print(str(DistanceSensorD.get_distance_cm()) + ',' + str(AccelerationB.get_speed()*-1) + ',' + str(int(SteeringE.get_degrees_counted()/2)) + ',' + str(int(AccelerationB.get_degrees_counted())))"
+    )
     print(data)
     while not isStalled(s):
         sendToSpike(s, "SteeringE.run_for_degrees(100)")
@@ -304,14 +345,15 @@ def runfieldmode(y,b,anz):
     sendToSpike(s, "Attachment.run_for_rotations(2)")
     Attachment_up = False
     while a < b:
-      
+
         #lower chassis and attachment
 
-        Autopilot(s,y * 3, destinationY = positionY)
+        Autopilot(s, y * 3, destinationY=destinationY)
+
         destinationX = positionX
-        
-        if (a % 2) == 0 and a < b-1:
-            
+
+        if (a % 2) == 0 and a < b - 1:
+
             #turn right
             sendToSpike(s, "Attachment.run_for_rotations(-2)")
             Attachment_up = True
@@ -319,35 +361,36 @@ def runfieldmode(y,b,anz):
             sendToSpike(s, "SteeringE.run_for_degrees(-35)")
             #
             f = 0
-            Autopilot(s,TargetHeading = 360, direction = 1)
+            Autopilot(s, TargetHeading=360, direction=1)
             #
-            sendToSpike(s, "SteeringE.run_for_degrees(35)")
             #
             while bnz < anz:
-                Autopilot(s,-3, stayStraight = True)
+                Autopilot(s, -3, stayStraight=True)
                 print(data)
                 bnz = bnz + 1
-            
+
             bnz = 0
             #
             sendToSpike(s, "SteeringE.run_for_degrees(-35)")
             #
             f = 0
-            Autopilot(s,TargetHeading = 270, direction = -1)
+            Autopilot(s, TargetHeading=270, direction=-1)
             #
-            sendToSpike(s, "SteeringE.run_for_degrees(35)")
             f = 0
-            
-            Autopilot(s, destinationX = destinationX, direction = 1, destinationY = positionY)
+            destinationY = positionY
+            Autopilot(s,
+                      destinationX=destinationX,
+                      direction=1,
+                      destinationY=destinationY)
             #
             sendToSpike(s, "Attachment.run_for_rotations(2)")
             Attachment_up = False
-            
+
             x = 0
             #print(a,b)
             print("wenden1")
-        elif  (a % 2) == 1 and a < b-1:
-            
+        elif (a % 2) == 1 and a < b - 1:
+
             #turn left
             sendToSpike(s, "Attachment.run_for_rotations(-2)")
             Attachment_up = True
@@ -355,37 +398,39 @@ def runfieldmode(y,b,anz):
             sendToSpike(s, "SteeringE.run_for_degrees(35)")
             #
             f = 0
-            Autopilot(s,TargetHeading = 360, direction = 1)
-            #            
-            sendToSpike(s, "SteeringE.run_for_degrees(-35)")
+            Autopilot(s, TargetHeading=360, direction=1)
             #
             while bnz < anz:
-                Autopilot(s,-3, stayStraight = True)
+                Autopilot(s, -3, stayStraight=True)
                 print(data)
                 bnz = bnz + 1
-            
+
             bnz = 0
             #
             sendToSpike(s, "SteeringE.run_for_degrees(35)")
             #
             f = 0
-            Autopilot(s,TargetHeading = 90, direction = -1)
+            Autopilot(s, TargetHeading=90, direction=-1)
             #
-            sendToSpike(s, "SteeringE.run_for_degrees(-35)")
             #
             f = 0
-
-            Autopilot(s, destinationX = destinationX, direction = 1, destinationY = positionY)
+            destinationY = positionY
+            Autopilot(s,
+                      destinationX=destinationX,
+                      direction=1,
+                      destinationY=destinationY)
             #
             sendToSpike(s, "Attachment.run_for_rotations(2)")
             Attachment_up = False
-            
-            
+
             x = 0
             print("wenden2")
         a = a + 1
+
+        print(destinationY)
+        print(positionY)
         print(a)
-      
+
         #raise attachment and chassis
     sendToSpike(s, "Chassis.run_for_rotations(-5)")
 
